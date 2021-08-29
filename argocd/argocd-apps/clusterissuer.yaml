@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: clusterissuer
+spec:
+  project: infra
+  source:
+    repoURL: https://github.com/NesManrique/k3d-gitops-cluster.git
+    targetRevision: HEAD
+    path: argocd/clusterissuer
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cert-manager
+  syncPolicy:
+    automated:
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+

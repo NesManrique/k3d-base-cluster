@@ -1,0 +1,26 @@
+---
+apiVersion: k3d.io/v1alpha2
+kind: Simple
+name: gitops-cluster
+servers: 1
+agents: 0
+image: rancher/k3s:v1.20.10-k3s1
+registries:
+  use:
+    - k3d-gitops-cluster-registry:55000
+ports:
+  - port: 18080:80
+    nodeFilters:
+      - loadbalancer
+  - port: 18443:443
+    nodeFilters:
+      - loadbalancer
+options:
+  k3d:
+    wait: true
+    timeout: "300s"
+  k3s:
+    extraServerArgs:
+      - --kubelet-arg=eviction-hard=imagefs.available<1%,nodefs.available<1%
+      - --kubelet-arg=eviction-minimum-reclaim=imagefs.available=1%,nodefs.available=1%
+      - --no-deploy=traefik

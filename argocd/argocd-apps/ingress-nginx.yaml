@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nginx-ingress
+spec:
+  project: infra
+  source:
+    repoURL: https://kubernetes.github.io/ingress-nginx
+    chart: ingress-nginx
+    targetRevision: 3.34.0
+    helm:
+      values: |
+        controller:
+          extraArgs:
+            enable-ssl-passthrough: ""
+        # To enable TCP passthrough for a non http service
+        # tcp:
+        #   9906: "mysql/mysql:3306"
+  destination:
+    namespace: nginx-ingress
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated:
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

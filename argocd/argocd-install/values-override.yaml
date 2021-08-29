@@ -1,0 +1,100 @@
+dex:
+  enabled: false
+configs:
+  secret:
+    # argocdadmin!
+    argocdServerAdminPassword: "$2y$10$AKRA9pUZ18UVjhZzrYaaQu2Y6ZP.E2rKS/.LFxj4BkRfIUZcgt/Fi"
+  repositoryCredentials:
+    username: argocd
+    password: CYg_r7zG5mdCuxaz5Jsr
+server:
+  config:
+    url: 'https://argocd.local.nestormanrique.com:8080'
+    repositories: |
+      - type: helm
+        url: https://charts.jetstack.io
+        name: cert-manager
+      - type: helm
+        url: https://kubernetes.github.io/ingress-nginx
+        name: ingress-nginx
+  ingress:
+    annotations:
+      cert-manager.io/cluster-issuer: local-ca-issuer
+      kubernetes.io/ingress.class: nginx
+    enabled: true
+    https: true
+    hosts:
+      - argocd.local.nestormanrique.com
+    tls:
+      - secretName: argocd-secret # do not change, this is the secret name used by ArgoCD
+        hosts:
+          - argocd.local.nestormanrique.com
+  extraArgs:
+    - --insecure
+  additionalApplications:
+    - name: argocd
+      namespace: argocd
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: argocd
+      project: argocd
+      source:
+        repoURL: https://github.com/NesManrique/k3d-gitops-cluster.git
+        targetRevision: HEAD
+        path: argocd/argocd-install/argo-cd
+        helm:
+          version: v3
+          valueFiles:
+            - values.yaml
+            - ../values-override.yaml
+      syncPolicy:
+        automated:
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+    - name: argocd-apps
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: argocd
+      namespace: argocd
+      project: argocd
+      source:
+        repoURL: https://github.com/NesManrique/k3d-gitops-cluster.git
+        targetRevision: HEAD
+        path: argocd/argocd-apps
+        directory:
+          recurse: true
+      syncPolicy:
+        automated:
+          selfHeal: true
+          prune: true
+    - name: argocd-appprojects
+      namespace: argocd
+      destination:
+        namespace: argocd
+        server: https://kubernetes.default.svc
+      project: argocd
+      source:
+        repoURL: https://github.com/NesManrique/k3d-gitops-cluster.git
+        targetRevision: HEAD
+        path: argocd/argocd-projects
+        directory:
+          recurse: true
+      syncPolicy:
+        automated:
+          selfHeal: true
+          prune: true
+  additionalProjects:
+    - name: argocd
+      namespace: argocd
+      description: Argocd Project
+      sourceRepos:
+      - '*'
+      destinations:
+      - namespace: argocd
+        server: https://kubernetes.default.svc
+      clusterResourceWhitelist:
+      - group: '*'
+        kind: '*'
+      orphanedResources:
+        warn: false
